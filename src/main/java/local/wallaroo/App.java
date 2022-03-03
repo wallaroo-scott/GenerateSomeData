@@ -17,10 +17,10 @@ This application creates randomized data in either the structure
 public class App
 {
     //
-    public static final Option ARG_FILENAME = new Option("fn", "filename",true, "Add custom output filename.");
-    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter: Tab, Comma, Space.");
-    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data.");
-    public static final Option ARG_FIELDS = new Option("f", "fields",true, "Set number of fields per line.");
+    public static final Option ARG_FILENAME = new Option("fn", "filename",true, "Add custom output filename. Default:  filename");
+    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter: Tab, Comma, Space. Default: tab");
+    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data. Default: 10");
+    public static final Option ARG_FIELDS = new Option("f", "fields",true, "Set number of fields per line. Default: 10");
     public static final Option ARG_DATATYPE = new Option("dt", "datatype",false, "Set output type: default/zeekdns. -- Currently Unavailable in this Version");
 
     static int switchRandom;
@@ -58,10 +58,40 @@ public class App
 
             CommandLineParser parser = new DefaultParser();
             CommandLine cl = parser.parse(options, args);
-            fileName = cl.getOptionValue("filename");
-            delimiterVerbose = cl.getOptionValue("delimiter");
-            fieldNumber = Integer.parseInt(cl.getOptionValue("fields"));
-            dataAmount = Integer.parseInt(cl.getOptionValue("lines"));
+
+
+
+     /*       if (cl.getOptionValue("filename")==null) {
+                printHelp(options);
+                showMessage("Delimiter not recognized", true);
+            }*/
+            if (cl.getOptionValue("filename")!=null) {
+                fileName = cl.getOptionValue("filename");
+            }
+            else {
+                fileName = "filename";
+            }
+
+            if (cl.getOptionValue("delimiter")!=null) {
+                delimiterVerbose = cl.getOptionValue("delimiter");
+            }
+            else {
+                delimiterVerbose="tab";
+            }
+
+            if (cl.getOptionValue("fields")!=null) {
+                fieldNumber = Integer.parseInt(cl.getOptionValue("fields"));
+            }
+            else {
+                fieldNumber = 10;
+            }
+
+            if (cl.getOptionValue("lines")!= null) {
+                dataAmount = Integer.parseInt(cl.getOptionValue("lines"));
+            }
+            else {
+                dataAmount = 10;
+            }
 
             switch(delimiterVerbose) {
                 case "Tab":
@@ -86,18 +116,17 @@ public class App
             }
 
             System.out.println("Filename  : " + fileName);
-            System.out.println("Delimiter : " + delimiter);
+            System.out.println("Delimiter : " + delimiterVerbose);
             System.out.println("Fields    : " + fieldNumber);
             System.out.println("Lines     : " + dataAmount);
 
             createFile();
             System.out.println("Done");
-
         }
 
         catch (Exception e) {
                 System.out.println("Values Error");
-                // printHelp(options);
+                printHelp(options);
                 e.printStackTrace();
                 System.exit(-1);
             }
@@ -211,13 +240,18 @@ public class App
     }
 
     public static void createFile () throws InterruptedException, IOException {
-        Random rand = new Random();
-        int upperbound = 3999;
-        int fileIncrement = rand.nextInt(upperbound)+1;
-        fileName =  "/tmp/test/" + "f-"+fileIncrement+".txt";
+        /*
+         Random rand = new Random();
+         int upperbound = 3999;
+         int fileIncrement = rand.nextInt(upperbound)+1;
+         fileName = "/tmp/test/" + "f-"+fileIncrement+".txt";
+        */
+
+        fileName = "/tmp/test/" + fileName;
         String getInfo = writeInfo();
         FileWriter writeFile = new FileWriter(fileName);
         System.out.println("Creating File...");
+
         try {
             writeFile.write(getInfo + "\n");
             for (int i = 1; i <= dataAmount; i++) {
@@ -290,7 +324,6 @@ public class App
                         writeFile.write("");
                     } else {
                         writeFile.write(delimiter);
-                        System.out.println("|"+delimiter+"|");
                     }
                 }
             }
