@@ -1,0 +1,541 @@
+
+  public static void createJSONFile (int lines, int fieldsVal, int nodes)  throws InterruptedException, IOException {
+
+        try {
+            if(!path.endsWith("/"))
+            {
+                path = path + "/";
+            }
+
+            fileName = path + fileName;
+            File directory = new File(path);
+            if (! directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String getInfo = writeInfoJSON();
+
+            FileWriter writeFile = new FileWriter(fileName);
+            System.out.println("Creating File...");
+            JSONObject objMain = new JSONObject();
+            JSONObject objPrimary = new JSONObject();
+            JSONArray objData = new JSONArray();
+            // List<String> jsonDataVector = new ArrayList<String>();
+            // Json Structure(?)
+            // objPrimary { objData, [jsonData Vector]}
+
+            writeFile.write(getInfo + "\n");
+            Random randData = new Random();
+
+           for (int topLevel = 1; topLevel <= nodes; topLevel++) {
+
+
+               for (int fields = 1; fields <= fieldsVal; fields++) {
+                   switchRandom = randData.nextInt(11);
+                   switch (switchRandom) {
+                       case 0:
+                           objData.add(returnBool());
+                           //writeFile.write(returnBool());
+                           returnBoolCount += 1;
+                           fullCount += 1;
+                           break;
+
+                       case 1: // some random word
+                           createRandomWordCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(createRandomWord(12));
+                           objData.add(createRandomWord(12).toString());
+                           break;
+
+                       case 2: // some random IP
+                           createRandomIPCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(createRandomIP(250));
+                           objData.add(createRandomIP(250).toString());
+                           break;
+
+                       case 3: // some random port
+                           returnIntegerCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(returnInteger(65000));
+                           objData.add(returnInteger(65000).toString());
+                           break;
+
+                       case 4:  // some random double
+                           returnRandDoubleCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(returnRandDouble(1111.1111, 9999.9999));
+                           objData.add(returnRandDouble(1111.1111, 9999.9999).toString());
+                           break;
+
+                       case 5: // some random url hostname
+                           returnURLCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(returnURL());
+                           objData.add(returnURL().toString());
+                           break;
+
+                       case 6: // some random date
+                           returnDateCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(returnDate());
+                           objData.add(returnDate().toString());
+                           break;
+
+                       case 7: // drop an empty now and then
+                           emptyFieldCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(emptyField);
+                           objData.add(emptyField.toString());
+                           break;
+
+                       case 8: // drop an empty now and then
+                           portNumberCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(enumReturn(1));
+                           objData.add(enumReturn(1).toString());
+                           break;
+
+                       case 9: // drop an empty now and then
+                           portNumberCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(enumReturn(2));
+                           objData.add(enumReturn(2).toString());
+                           break;
+
+                       case 10:
+                           returnVectorCount += 1;
+                           fullCount += 1;
+                           //writeFile.write(returnVector(3));
+                           objData.add(returnVector(3).toString());
+                           break;
+
+                       default:
+                           System.out.print("|" + switchRandom + "|-");
+                           break;
+                   }
+                   objPrimary.put(fields,objData);
+                   System.out.println(fields + "  " + objPrimary.toString());
+               }
+
+               for (int i = 1; i <= lines; i++) {
+                   // objPrimary.put(returnInteger(65000), createRandomIP(255));
+                   // Concatenate vector Strings
+                   // objData.add(jsonDataVector);
+                   System.out.println(objData.toString());
+                   objPrimary.put(returnInteger(65000), objData);
+
+                   writeFile.write(objPrimary.toJSONString());
+               }
+
+               objMain.put(topLevel,objPrimary);
+               writeFile.write(objMain.toJSONString());
+           }
+
+
+            //writeFile.write(objPrimary.toJSONString());
+            // writeFile.write("\n");
+            System.out.println("Closing File...");
+            writeFile.close();
+        }
+
+        catch (IOException e)
+        {
+            showMessage("An error occurred writing the file.", false);
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        fileReport(fileName);
+        showMessage("File Completed: " + fileName + "\n" + "Metadata File: " + fileName+".meta", true);
+
+    }
+
+
+
+    public static List<String> goGetArray(int fieldsVal, List<String> arrayList) {
+        for (int fields = 1; fields <= fieldsVal; fields++) {
+            arrayList.add(returnRandomString());
+        }
+        return arrayList;
+    }
+
+
+    public static void testCase(int lines, int fields, int nodes)  throws InterruptedException, IOException {
+
+        JSONObject objPrimary = new JSONObject();
+        JSONObject objSecond = new JSONObject();
+        JSONArray objArray = new JSONArray();
+
+        for (int n = 1; n <= nodes; n++) {
+            for (int f = 1; f <= fields; f++) {
+                objArray.add(returnRandomString());
+            }
+            for (int l = 1; l <= lines; l++) {
+
+                objSecond.put(l, objArray);
+            }
+
+            objPrimary.put(n, objSecond);
+        }
+
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonElement je = JsonParser.parseString(objPrimary.toString());
+        String prettyJsonString = gson.toJson(je);
+        System.out.println(prettyJsonString);
+        // showMessage("File Completed: " + fileName + "\n" + "Metadata File: " + fileName+".meta", true);
+
+    }
+
+
+    Random rand = new Random();
+    int upperbound = 3999;
+    int fileIncrement = rand.nextInt(upperbound)+1;
+    fileName = "/tmp/test/" + "f-"+fileIncrement+".txt";
+
+    /*if (path.substring(path.length() - 1) != "/") {
+                 path = path + "/";
+             }*/
+
+    public static String seqString(int i) {
+     return i < 0 ? "" : seqString((i / 26) - 1) + (char)(65 + i % 26);
+    }
+
+    public static String writeInfoJSON() {
+            collectInfo =   "\n" +
+                    "# Lines of Data  : " + dataAmount + "\n" +
+                    //"# Fields in Each : " + fieldNumber + "\n" +
+                    "# Filename       : " + fileName + "\n"  +
+                    "# Path           : " + path + "\n"  ;
+
+            return collectInfo;
+        }
+
+ // System.out.println("Output    : " + cl.getOptionValue("output").toString());
+            // boolean outputOption = false;
+            // createJSONFile(dataAmount,fieldNumber, nodes);
+/*
+           if (cl.getOptionValue("nested") == null) {
+                nestedValue = 10;
+            }
+            else {
+                nestedValue = Integer.valueOf(cl.getOptionValue("nested"));
+            }
+
+            if (cl.getOptionValue("output").equals("delimiter")) {
+               // delimiterOutput = true;
+                outputOption = true;
+                System.out.println("Delimiter  : " + cl.getOptionValue("output").toString());
+            }
+
+            if (cl.getOptionValue("output").equals("json") || cl.getOptionValue("output").equals("JSON")) {
+                System.out.println("Output    : " + cl.getOptionValue("output").toString());
+                System.out.println("Nested    : " + cl.getOptionValue("nested").toString());
+                // createJSONFile();
+                outputOption = false;
+            }
+
+            if (!outputOption) {
+                createJSONFile();
+                System.out.println("Done");
+                System.exit(0);
+            }
+            if (outputOption) {
+                createDelmitedFile();
+                System.out.println("Done");
+                System.exit(0);
+            }
+            if (cl.getOptionValue("output") == null)  {
+                printHelp(options);
+                showMessage("Parameter Error", true);
+            }
+            else {
+                createDelmitedFile();
+            }*/
+
+            //////////////////////////////////////////////////////////
+public static void createDelimitedFile () throws InterruptedException, IOException {
+
+        try {
+            if(!path.endsWith("/"))
+            {
+                path = path + "/";
+            }
+
+            fileName = path + fileName;
+            System.out.println("Writing to:  " + fileName);
+            File directory = new File(path);
+            if (! directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String getInfo = writeInfoDelimiter();
+            FileWriter writeFile = new FileWriter(fileName);
+            System.out.println("Creating File...");
+
+            writeFile.write(getInfo + "\n");
+            for (int i = 1; i <= dataAmount; i++) {
+                for (int fields = 0; fields <= fieldNumber; fields++) {
+                    Random randData = new Random();
+                    switchRandom = randData.nextInt(11);
+                    switch (switchRandom) {
+
+                        case 0:
+                            writeFile.write(returnBool());
+                            returnBoolCount += 1;
+                            fullCount +=1;
+                            break;
+
+                        case 1: // some random word
+                            createRandomWordCount += 1;
+                            fullCount +=1;
+                            writeFile.write(createRandomWord(12));
+                            break;
+
+                        case 2: // some random IP
+                            createRandomIPCount += 1;
+                            fullCount +=1;
+                            writeFile.write(createRandomIP(250));
+                            break;
+
+                        case 3: // some random port
+                            returnIntegerCount += 1;
+                            fullCount +=1;
+                            writeFile.write(returnInteger(65000));
+                            break;
+
+                        case 4:  // some random double
+                            returnRandDoubleCount += 1;
+                            fullCount +=1;
+                            writeFile.write(returnRandDouble(1111.1111, 9999.9999));
+                            break;
+
+                        case 5: // some random url hostname
+                            returnURLCount += 1;
+                            fullCount +=1;
+                            writeFile.write(returnURL());
+                            break;
+
+                        case 6: // some random date
+                            returnDateCount += 1;
+                            fullCount +=1;
+                            writeFile.write(returnDate());
+                            break;
+
+                        case 7: // drop an empty now and then
+                            emptyFieldCount += 1;
+                            fullCount +=1;
+                            writeFile.write(emptyField);
+                            break;
+
+                        case 8: // drop an empty now and then
+                            portNumberCount += 1;
+                            fullCount +=1;
+                            writeFile.write(enumReturn(1));
+                            break;
+
+                        case 9: // drop an empty now and then
+                            portNumberCount += 1;
+                            fullCount +=1;
+                            writeFile.write(enumReturn(2));
+                            break;
+
+                        case 10:
+                            returnVectorCount += 1;
+                            fullCount +=1;
+                            writeFile.write(returnVector(3));
+                            break;
+
+                        default:
+                            System.out.print(".");
+                            break;
+                    }
+
+                    if (fields == fieldNumber) {
+                        writeFile.write("");
+                    } else {
+                        writeFile.write(delimiter);
+                    }
+                }
+            }
+            writeFile.write("\n");
+            System.out.println("Closing File...");
+            writeFile.close();
+        }
+
+        catch (IOException e)
+        {
+            showMessage("An error occurred writing the file.", false);
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        fileReport(fileName);
+        showMessage("File Completed: " + fileName + "\n" + "Metadata File: " + fileName+".meta", true);
+    }
+
+
+
+                    returnURLCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnURL());
+
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(1));
+
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write("C_INTERNET");
+
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(1));
+
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(2));
+
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(1));
+
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write("NOERROR");
+
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(2));
+
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(1));
+
+
+
+
+
+
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnBool());
+
+                    returnURLCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnURL());
+
+                    returnDateCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnDate());
+
+                    emptyFieldCount += 1;
+                    fullCount +=1;
+                    writeFile.write(emptyField);
+
+                    portNumberCount += 1;
+                    fullCount +=1;
+                    writeFile.write(enumReturn(1));
+
+                    portNumberCount += 1;
+                    fullCount +=1;
+                    writeFile.write(enumReturn(2));
+
+                    returnVectorCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnVector(3));
+
+
+                     public static String returnRandomString() {
+                            Random randData = new Random();
+                            switchRandom = randData.nextInt(11);
+                            switch (switchRandom) {
+                                case 0:
+                                    //writeFile.write(returnBool());
+                                    returnBoolCount += 1;
+                                    fullCount += 1;
+                                    return (returnBool());
+
+
+                                case 1: // some random word
+                                    createRandomWordCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(createRandomWord(12));
+                                    return (createRandomWord(12));
+
+
+                                case 2: // some random IP
+                                    createRandomIPCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(createRandomIP(250));
+                                    return (createRandomIP(250));
+
+
+                                case 3: // some random port
+                                    returnIntegerCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(returnInteger(65000));
+                                    return (returnInteger(65000));
+
+
+                                case 4:  // some random double
+                                    returnRandDoubleCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(returnRandDouble(1111.1111, 9999.9999));
+                                    return (returnRandDouble(1111.1111, 9999.9999));
+
+
+                                case 5: // some random url hostname
+                                    returnURLCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(returnURL());
+                                    return (returnURL());
+
+
+                                case 6: // some random date
+                                    returnDateCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(returnDate());
+                                    return (returnDate());
+
+
+                                case 7: // drop an empty now and then
+                                    emptyFieldCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(emptyField);
+                                    return (emptyField);
+
+
+                                case 8: // drop an empty now and then
+                                    portNumberCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(enumReturn(1));
+                                    return (enumReturn(1));
+
+
+                                case 9: // drop an empty now and then
+                                    portNumberCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(enumReturn(2));
+                                    return (enumReturn(2));
+
+                                case 10:
+                                    returnVectorCount += 1;
+                                    fullCount += 1;
+                                    //writeFile.write(returnVector(3));
+                                    return (returnVector(3));
+
+
+                                default:
+                                    System.out.print("|" + switchRandom + "|-");
+                                    showMessage("Error in loop", false);
+                                    break;
+                            }
+
+                            return ("FAIL");
+                        }
+
+    static public void writeLog(String str) {
+        System.out.println("str");
+    }
