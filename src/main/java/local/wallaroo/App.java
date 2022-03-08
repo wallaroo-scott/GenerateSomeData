@@ -1,10 +1,10 @@
 package local.wallaroo;
 
-import com.google.gson.*;
-import org.apache.commons.cli.*;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
+import org.apache.commons.cli.*;
+// import org.json.simple.JSONArray;
+// import org.json.simple.JSONObject;
+// import com.google.gson.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -67,11 +67,11 @@ public class App
         options.addOption(ARG_FILENAME);
         options.addOption(ARG_DELIMITER);
         options.addOption(ARG_LINES);
-        // options.addOption(ARG_FIELDS);
-        // options.addOption(ARG_DATATYPE);
         options.addOption(ARG_PATH);
         // options.addOption(ARG_OUTPUT);
         // options.addOption(ARG_NESTED);
+        // options.addOption(ARG_FIELDS);
+        // options.addOption(ARG_DATATYPE);
 
         try {
             CommandLineParser parser = new DefaultParser();
@@ -161,7 +161,7 @@ public class App
 
     public static void showMessage(String message, boolean exits) {
         System.out.println(message);
-        if (exits==true) {
+        if (exits) {
             System.out.println("Exiting...");
             System.exit(0);
         }
