@@ -1,37 +1,52 @@
 package local.wallaroo;
 
+import com.google.gson.*;
 import org.apache.commons.cli.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.GregorianCalendar;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.io.PrintWriter;
 
 
 /*
 
-This application creates randomized data in either the structure
+This application creates randomized data in x rows(lines) by y columns(fields).  Default filename is "filename"
+but could be adjusted.
+
+Working on:  Zeek DNS format
+
+Command Line Example:   mvn exec:java -Dexec.mainClass=local.wallaroo.App -Dexec.args="-fn test.text -d comma -l 100 -f 10"
 
 */
+
 public class App
 {
     //
     public static final Option ARG_FILENAME = new Option("fn", "filename",true, "Add custom output filename. Default:  filename");
-    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter: Tab, Comma, Space. Default: tab");
-    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data. Default: 10");
-    public static final Option ARG_FIELDS = new Option("f", "fields",true, "Set number of fields per line. Default: 10");
-    public static final Option ARG_DATATYPE = new Option("dt", "datatype",false, "Set output type: default/zeekdns. -- Currently Unavailable in this Version");
+    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data. Default: 10 (-lines = 10)");
+    public static final Option ARG_FIELDS = new Option("f", "fields",true, "Set number of fields per line. Default: 10 (-fields = 10");
+    public static final Option ARG_DATATYPE = new Option("dt", "datatype",false, "Set output type: default/zeekdns.");
+    public static final Option ARG_PATH = new Option("p", "path",true, "Set the path.  Default:  /tmp/ (-path /tmp/output/)");
+    public static final Option ARG_OUTPUT = new Option("o", "output",true, "Set the output to either delimiter or JSON.  (-output delimiter)");
+    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter if NOT JSON: Tab, Comma, Space. Default: tab (-delimiter comma)");
+    public static final Option ARG_NESTED = new Option("n", "nested",true, "Set the nested object property (number of items in each value property) Default: 10");
 
     static int switchRandom;
     public static String collectInfo;
     public static String fileName;
-    public static int fieldNumber; // fields per line
+    public static int fieldNumber = 24; // fields per line
     public static int dataAmount;  // number of lines
+    public static int fullCount;
     public static String delimiter;
+    public static String path;
     public static String delimiterVerbose;
     public static String emptyField = "(empty)";
-
+    public static boolean delimiterOutput;
     public static int returnDateCount;
     public static int createRandomWordCount;
     public static int createRandomIPCount;
@@ -43,57 +58,56 @@ public class App
     public static int returnBoolCount;
     public static int returnVectorCount;
 
+    private static FileWriter file;
+        // public static Integer nestedValue;
+
     public static void main( String[] args )  throws Exception {
-
-        CommandLineParser clp = new DefaultParser();
-
+        // CommandLineParser clp = new DefaultParser();
         Options options = new Options();
         options.addOption(ARG_FILENAME);
         options.addOption(ARG_DELIMITER);
         options.addOption(ARG_LINES);
-        options.addOption(ARG_FIELDS);
-        options.addOption(ARG_DATATYPE);
+        // options.addOption(ARG_FIELDS);
+        // options.addOption(ARG_DATATYPE);
+        options.addOption(ARG_PATH);
+        // options.addOption(ARG_OUTPUT);
+        // options.addOption(ARG_NESTED);
 
         try {
-
             CommandLineParser parser = new DefaultParser();
             CommandLine cl = parser.parse(options, args);
 
-
-
-     /*       if (cl.getOptionValue("filename")==null) {
-                printHelp(options);
-                showMessage("Delimiter not recognized", true);
-            }*/
-            if (cl.getOptionValue("filename")!=null) {
+            if (cl.getOptionValue("filename") != null) {
                 fileName = cl.getOptionValue("filename");
-            }
-            else {
+            } else {
                 fileName = "filename";
             }
 
-            if (cl.getOptionValue("delimiter")!=null) {
+            if (cl.getOptionValue("delimiter") != null) {
                 delimiterVerbose = cl.getOptionValue("delimiter");
-            }
-            else {
-                delimiterVerbose="tab";
+            } else {
+                delimiterVerbose = "tab";
             }
 
-            if (cl.getOptionValue("fields")!=null) {
+            /*if (cl.getOptionValue("fields") != null) {
                 fieldNumber = Integer.parseInt(cl.getOptionValue("fields"));
-            }
-            else {
+            } else {
                 fieldNumber = 10;
-            }
+            }*/
 
-            if (cl.getOptionValue("lines")!= null) {
+            if (cl.getOptionValue("lines") != null) {
                 dataAmount = Integer.parseInt(cl.getOptionValue("lines"));
-            }
-            else {
+            } else {
                 dataAmount = 10;
             }
 
-            switch(delimiterVerbose) {
+            if (cl.getOptionValue("path") != null) {
+                path = cl.getOptionValue("path").toString() ;
+            } else {
+                path = "/tmp/box/";
+            }
+
+            switch (delimiterVerbose) {
                 case "Tab":
                 case "tab":
                     delimiter = "\t";
@@ -114,14 +128,15 @@ public class App
                     printHelp(options);
                     break;
             }
-
+            // int nodes = 2;
             System.out.println("Filename  : " + fileName);
-            System.out.println("Delimiter : " + delimiterVerbose);
-            System.out.println("Fields    : " + fieldNumber);
+            System.out.println("Path      : " + path);
+            // System.out.println("Fields    : " + fieldNumber);
             System.out.println("Lines     : " + dataAmount);
 
-            createFile();
+            createDelimitedFile();
             System.out.println("Done");
+            System.exit(0);
         }
 
         catch (Exception e) {
@@ -135,29 +150,21 @@ public class App
     private static void printHelp(Options options) {
         HelpFormatter formatter = new HelpFormatter();
         PrintWriter pw = new PrintWriter(System.out);
-        pw.println("\nData Generator v.0.3");
+        pw.println("\nData Generator v.0.5");
         pw.println();
         formatter.printUsage(pw, 120, "java [-jar] DataGenerator[.java] [Option] ");
-        formatter.printWrapped(pw, 120, "Example: java DataGenerator -fn filename.txt -d comma -f 100 -l 100 -dt default");
+        formatter.printWrapped(pw, 120, "Example: java DataGenerator.java -fn filename.json -p /tmp/test -o json -d comma -f 100 -l 100 -dt default");
         pw.println();
         formatter.printOptions(pw, 120, options, 2, 6);
         pw.close();
     }
 
-    public void closeOut() {
-        System.exit(0);
-    }
-
     public static void showMessage(String message, boolean exits) {
         System.out.println(message);
         if (exits==true) {
-            System.out.println("Exited");
+            System.out.println("Exiting...");
             System.exit(0);
         }
-    }
-
-    public static String seqString(int i) {
-        return i < 0 ? "" : seqString((i / 26) - 1) + (char)(65 + i % 26);
     }
 
     public static String createRandomWord(int len) {  // Convert to serial integer
@@ -196,12 +203,21 @@ public class App
         else {return "false";}
     }
 
-    public static String returnVector(int vecLength) {
-        String combined = null;
+    public static String returnIntegerVector(int vecLength) {
+        String combined = "";
         for (int i=0; i < vecLength-1; i++) {
             combined += returnRandDouble(0.1,5.0)+",";
         }
         combined += returnRandDouble(0.1,5.0);
+        return combined;
+    }
+
+    public static String returnStringVector(int vecLength) {
+        String combined = "";
+        for (int i=0; i < vecLength-1; i++) {
+            combined += (createRandomWord(6)+",");
+        }
+        combined += (createRandomWord(6));
         return combined;
     }
 
@@ -229,122 +245,226 @@ public class App
         return s;
     }
 
-    public static String writeInfo() {
+    public static String writeInfoDelimiter() {
         collectInfo =   "\n" +
                 "# Lines of Data  : " + dataAmount + "\n" +
-                "# Fields in Each : " + fieldNumber + "\n" +
+                //"# Fields in Each : " + fieldNumber + "\n" +
                 "# Delimiter      : " + delimiterVerbose + "\n" +
-                "# Filename       : " + fileName + "\n"  ;
+                "# Filename       : " + fileName + "\n"  +
+                "# Path           : " + path + "\n"  ;
 
         return collectInfo;
     }
 
-    public static void createFile () throws InterruptedException, IOException {
-        /*
-         Random rand = new Random();
-         int upperbound = 3999;
-         int fileIncrement = rand.nextInt(upperbound)+1;
-         fileName = "/tmp/test/" + "f-"+fileIncrement+".txt";
-        */
 
-        fileName = "/tmp/test/" + fileName;
-        String getInfo = writeInfo();
-        FileWriter writeFile = new FileWriter(fileName);
-        System.out.println("Creating File...");
+
+    public static void createDelimitedFile () throws InterruptedException, IOException {
+        String header = "#separator \\x09\n" +
+                "#set_separator\t,\n" +
+                "#empty_field\t(empty)\n" +
+                "#unset_field\t-\n" +
+                "#path\tdns\n" +
+                "#open\t2021-02-04-23-45-01\n" +
+                "#fields\tts\tuid\tid.orig_h\tid.orig_p\tid.resp_h\tid.resp_p\tproto\ttrans_id\trtt\tquery\tqclass\tqclass_name\tqtype\tqtype_name\trcode\trcode_name\tAA\tTC\tRD\tRA\tZ\tanswers\tTTLs\trejected\n" +
+                "#types\ttime\tstring\taddr\tport\taddr\tport\tenum\tcount\tinterval\tstring\tcount\tstring\tcount\tstring\tcount\tstring\tbool\tbool\tbool\tbool\tcount\tvector[string]\tvector[interval]\tbool";
 
         try {
-            writeFile.write(getInfo + "\n");
-            for (int i = 1; i <= dataAmount; i++) {
-                for (int fields = 0; fields <= fieldNumber; fields++) {
-
-                    Random randData = new Random();
-                    switchRandom = randData.nextInt(12);
-                    switch (switchRandom) {
-
-                        case 0:
-                            writeFile.write(returnBool());
-                            returnBoolCount += 1;
-                            break;
-
-                        case 1: // some random word
-                            createRandomWordCount += 1;
-                            writeFile.write(createRandomWord(12));
-                            break;
-
-                        case 2: // some random IP
-                            createRandomIPCount += 1;
-                            writeFile.write(createRandomIP(250));
-                            break;
-
-                        case 3: // some random port
-                            returnIntegerCount += 1;
-                            writeFile.write(returnInteger(65000));
-                            break;
-
-                        case 4:  // some random double
-                            returnRandDoubleCount += 1;
-                            writeFile.write(returnRandDouble(1111.1111, 9999.9999));
-                            break;
-
-                        case 5: // some random url hostname
-                            returnURLCount += 1;
-                            writeFile.write(returnURL());
-                            break;
-
-                        case 6: // some random date
-                            returnDateCount += 1;
-                            writeFile.write(returnDate());
-                            break;
-
-                        case 7: // drop an empty now and then
-                            emptyFieldCount += 1;
-                            writeFile.write(emptyField);
-                            break;
-
-                        case 8: // drop an empty now and then
-                            portNumberCount += 1;
-                            writeFile.write(enumReturn(1));
-                            break;
-
-                        case 9: // drop an empty now and then
-                            portNumberCount += 1;
-                            writeFile.write(enumReturn(2));
-                            break;
-
-                        case 10:
-                            returnVectorCount += 1;
-                            writeFile.write(returnVector(3));
-                            break;
-
-                        default:
-                            break;
-                    }
-
-                    if (fields == fieldNumber) {
-                        writeFile.write("");
-                    } else {
-                        writeFile.write(delimiter);
-                    }
-                }
+            if(!path.endsWith("/"))
+            {
+                path = path + "/";
             }
+
+            fileName = path + fileName;
+            System.out.println("Writing to:  " + fileName);
+            File directory = new File(path);
+            if (! directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // String getInfo = writeInfoDelimiter();
+            FileWriter writeFile = new FileWriter(fileName);
+            System.out.println("Creating File...");
+
+            writeFile.write(header + "\n");  // was getInfo
+            Random rand  = new Random(2);
+            for (int i = 1; i <= dataAmount; i++) {
+                // for (int fields = 0; fields <= fieldNumber; fields++) {
+                    // 1
+                    returnRandDoubleCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnRandDouble(1612481111.1111, 1612489999.9999));
+                    writeFile.write(delimiter);
+
+                    // 2
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(createRandomWord(19));
+                    writeFile.write(delimiter);
+
+                    // 3
+                    createRandomIPCount += 1;
+                    fullCount +=1;
+                    writeFile.write(createRandomIP(250));
+                    writeFile.write(delimiter);
+
+                    // 4
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 5
+                    createRandomIPCount += 1;
+                    fullCount +=1;
+                    writeFile.write(createRandomIP(250));
+                    writeFile.write(delimiter);
+
+                    // 6
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 7
+                    portNumberCount += 1;
+                    fullCount +=1;
+                    writeFile.write(enumReturn(rand.nextInt()));
+                    writeFile.write(delimiter);
+
+                    // 8
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 9
+                    portNumberCount += 1;
+                    fullCount +=1;
+                    writeFile.write(enumReturn(rand.nextInt()));
+                    writeFile.write(delimiter);
+
+                    // 10
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnURL());
+                    writeFile.write(delimiter);
+
+                    // 11
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    //12
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(createRandomWord(19));
+                    writeFile.write(delimiter);
+
+                    // 13
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 14
+                    createRandomWordCount += 1;
+                    fullCount +=1;
+                    writeFile.write(createRandomWord(19));
+                    writeFile.write(delimiter);
+
+                    // 16
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 17
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(1));
+                    writeFile.write(delimiter);
+
+                    // 18
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(1));
+                    writeFile.write(delimiter);
+
+                    // 19
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(1));
+                    writeFile.write(delimiter);
+
+                    // 20
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(1));
+                    writeFile.write(delimiter);
+
+                    // 21
+                    returnIntegerCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnInteger(65000));
+                    writeFile.write(delimiter);
+
+                    // 22
+                    returnVectorCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnIntegerVector(3));
+                    writeFile.write(delimiter);
+
+                    // 23
+                    returnVectorCount += 1;
+                    fullCount +=1;
+                    writeFile.write(returnStringVector(3));
+                    writeFile.write(delimiter);
+
+                    // 24
+                    returnBoolCount += 1;
+                    fullCount +=1;
+                    writeFile.write(seqString(1));
+
+                    writeFile.write("\n");
+                    // }
+                }
+
             writeFile.write("\n");
+            System.out.println("Closing File...");
+            writeFile.close();
+            // fileReport(fileName);
+            System.out.println("\n");
+            System.out.println("Metadata Report: \n");
+            System.out.println("fullCount(true full)  :"+fullCount);
+            System.out.println("createRandomWordCount :"+createRandomWordCount);
+            System.out.println("createRandomIPCount   :"+createRandomIPCount);
+            System.out.println("returnIntegerCount    :"+returnIntegerCount);
+            System.out.println("returnRandDoubleCount :"+returnRandDoubleCount);
+            System.out.println("returnURLCount        :"+returnURLCount);
+            System.out.println("emptyFieldCount       :"+emptyFieldCount);
+            System.out.println("portNumberCount       :"+portNumberCount);
+            System.out.println("returnBoolCount       :"+returnBoolCount);
+            System.out.println("returnVectorCount     :"+returnVectorCount);
         }
 
         catch (IOException e)
         {
             showMessage("An error occurred writing the file.", false);
             e.printStackTrace();
-            return;
+            System.exit(-1);
         }
-        System.out.println("Closing File...");
-        writeFile.close();
-        fileReport(fileName);
         showMessage("File Completed: " + fileName + "\n" + "Metadata File: " + fileName+".meta", true);
+    }
+
+    public static String seqString(int i) {
+        return i < 0 ? "" : seqString((i / 26) - 1) + (char)(65 + i % 26);
     }
 
     public static void fileReport(String fileName) throws IOException {
         FileWriter writeMetaFile = new FileWriter(fileName+".meta");
         writeMetaFile.write("Metadata Report: \n");
+        writeMetaFile.write("fullCount(true full)  :"+fullCount+"\n");
         writeMetaFile.write("createRandomWordCount :"+createRandomWordCount+"\n");
         writeMetaFile.write("createRandomIPCount   :"+createRandomIPCount+"\n");
         writeMetaFile.write("returnIntegerCount    :"+returnIntegerCount+"\n");
