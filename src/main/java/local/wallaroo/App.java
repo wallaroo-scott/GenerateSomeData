@@ -1,6 +1,5 @@
 package local.wallaroo;
 
-
 import org.apache.commons.cli.*;
 // import org.json.simple.JSONArray;
 // import org.json.simple.JSONObject;
@@ -12,16 +11,13 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.io.PrintWriter;
 
-
 /*
-
 This application creates randomized data in x rows(lines) by y columns(fields).  Default filename is "filename"
 but could be adjusted.
 
 Working on:  Zeek DNS format
 
 Command Line Example:   mvn exec:java -Dexec.mainClass=local.wallaroo.App -Dexec.args="-fn test.text -d comma -l 100 -f 10"
-
 */
 
 public class App
@@ -61,8 +57,11 @@ public class App
     private static FileWriter file;
         // public static Integer nestedValue;
 
+    // public static ProgressBar pb = new ProgressBar("Progress", 100);
+
     public static void main( String[] args )  throws Exception {
         // CommandLineParser clp = new DefaultParser();
+        // pb.start();
         Options options = new Options();
         options.addOption(ARG_FILENAME);
         options.addOption(ARG_DELIMITER);
@@ -136,6 +135,8 @@ public class App
 
             createDelimitedFile();
             System.out.println("Done");
+            // pb.setExtraMessage("Finalizing....");
+            // pb.stop();
             System.exit(0);
         }
 
@@ -259,6 +260,7 @@ public class App
 
 
     public static void createDelimitedFile () throws InterruptedException, IOException {
+        String anim= "|/-\\";
         String header = "#separator \\x09\n" +
                 "#set_separator\t,\n" +
                 "#empty_field\t(empty)\n" +
@@ -277,7 +279,7 @@ public class App
             fileName = path + fileName;
             System.out.println("Writing to:  " + fileName);
             File directory = new File(path);
-            if (! directory.exists()) {
+            if (!directory.exists()) {
                 directory.mkdirs();
             }
 
@@ -289,147 +291,155 @@ public class App
             Random rand  = new Random(2);
             for (int i = 1; i <= dataAmount; i++) {
                 // for (int fields = 0; fields <= fieldNumber; fields++) {
-                    // 1
-                    returnRandDoubleCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnRandDouble(1612481111.1111, 1612489999.9999));
-                    writeFile.write(delimiter);
+                // 1
+                returnRandDoubleCount += 1;
+                fullCount +=1;
+                writeFile.write(returnRandDouble(1612481111.1111, 1612489999.9999));
+                writeFile.write(delimiter);
 
-                    // 2
-                    createRandomWordCount += 1;
-                    fullCount +=1;
-                    writeFile.write(createRandomWord(19));
-                    writeFile.write(delimiter);
+                // 2
+                createRandomWordCount += 1;
+                fullCount +=1;
+                writeFile.write(createRandomWord(19));
+                writeFile.write(delimiter);
 
-                    // 3
-                    createRandomIPCount += 1;
-                    fullCount +=1;
-                    writeFile.write(createRandomIP(250));
-                    writeFile.write(delimiter);
+                // 3
+                createRandomIPCount += 1;
+                fullCount +=1;
+                writeFile.write(createRandomIP(250));
+                writeFile.write(delimiter);
 
-                    // 4
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 4
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 5
-                    createRandomIPCount += 1;
-                    fullCount +=1;
-                    writeFile.write(createRandomIP(250));
-                    writeFile.write(delimiter);
+                // 5
+                createRandomIPCount += 1;
+                fullCount +=1;
+                writeFile.write(createRandomIP(250));
+                writeFile.write(delimiter);
 
-                    // 6
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 6
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 7
-                    portNumberCount += 1;
-                    fullCount +=1;
-                    writeFile.write(enumReturn(rand.nextInt()));
-                    writeFile.write(delimiter);
+                // 7
+                portNumberCount += 1;
+                fullCount +=1;
+                writeFile.write(enumReturn(rand.nextInt()));
+                writeFile.write(delimiter);
 
-                    // 8
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 8
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 9
-                    portNumberCount += 1;
-                    fullCount +=1;
-                    writeFile.write(enumReturn(rand.nextInt()));
-                    writeFile.write(delimiter);
+                // 9
+                portNumberCount += 1;
+                fullCount +=1;
+                writeFile.write(returnRandDouble(0.01, 0.5));
+                writeFile.write(delimiter);
 
-                    // 10
-                    createRandomWordCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnURL());
-                    writeFile.write(delimiter);
+                // 10
+                createRandomWordCount += 1;
+                fullCount +=1;
+                writeFile.write(returnURL());
+                writeFile.write(delimiter);
 
-                    // 11
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 11
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    //12
-                    createRandomWordCount += 1;
-                    fullCount +=1;
-                    writeFile.write(createRandomWord(19));
-                    writeFile.write(delimiter);
+                //12
+                createRandomWordCount += 1;
+                fullCount +=1;
+                writeFile.write(createRandomWord(19));
+                writeFile.write(delimiter);
 
-                    // 13
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 13
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 14
-                    createRandomWordCount += 1;
-                    fullCount +=1;
-                    writeFile.write(createRandomWord(19));
-                    writeFile.write(delimiter);
+                // 14
+                createRandomWordCount += 1;
+                fullCount +=1;
+                writeFile.write(createRandomWord(19));
+                writeFile.write(delimiter);
 
-                    // 16
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 15
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 17
-                    returnBoolCount += 1;
-                    fullCount +=1;
-                    writeFile.write(seqString(1));
-                    writeFile.write(delimiter);
+                // 16
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
+                writeFile.write(delimiter);
 
-                    // 18
-                    returnBoolCount += 1;
-                    fullCount +=1;
-                    writeFile.write(seqString(1));
-                    writeFile.write(delimiter);
+                // 17
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
+                writeFile.write(delimiter);
 
-                    // 19
-                    returnBoolCount += 1;
-                    fullCount +=1;
-                    writeFile.write(seqString(1));
-                    writeFile.write(delimiter);
+                // 18
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
+                writeFile.write(delimiter);
 
-                    // 20
-                    returnBoolCount += 1;
-                    fullCount +=1;
-                    writeFile.write(seqString(1));
-                    writeFile.write(delimiter);
+                // 19
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
+                writeFile.write(delimiter);
 
-                    // 21
-                    returnIntegerCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnInteger(65000));
-                    writeFile.write(delimiter);
+                // 20
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
+                writeFile.write(delimiter);
 
-                    // 22
-                    returnVectorCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnIntegerVector(3));
-                    writeFile.write(delimiter);
+                // 21
+                returnIntegerCount += 1;
+                fullCount +=1;
+                writeFile.write(returnInteger(65000));
+                writeFile.write(delimiter);
 
-                    // 23
-                    returnVectorCount += 1;
-                    fullCount +=1;
-                    writeFile.write(returnStringVector(3));
-                    writeFile.write(delimiter);
+                // 22
+                returnVectorCount += 1;
+                fullCount +=1;
+                writeFile.write(returnStringVector(3));
+                writeFile.write(delimiter);
 
-                    // 24
-                    returnBoolCount += 1;
-                    fullCount +=1;
-                    writeFile.write(seqString(1));
+                // 23
+                returnVectorCount += 1;
+                fullCount +=1;
+                writeFile.write(returnIntegerVector(3));
+                writeFile.write(delimiter);
 
-                    writeFile.write("\n");
-                    // }
-                }
+                // 24
+                returnBoolCount += 1;
+                fullCount +=1;
+                writeFile.write(seqString(1));
 
+                writeFile.write("\n");
+                // }
+            }
+
+
+            // pb.setExtraMessage("Creating Report....");
             writeFile.write("\n");
             System.out.println("Closing File...");
             writeFile.close();
@@ -446,6 +456,7 @@ public class App
             System.out.println("portNumberCount       :"+portNumberCount);
             System.out.println("returnBoolCount       :"+returnBoolCount);
             System.out.println("returnVectorCount     :"+returnVectorCount);
+            System.out.println("\n");
         }
 
         catch (IOException e)
@@ -461,22 +472,7 @@ public class App
         return i < 0 ? "" : seqString((i / 26) - 1) + (char)(65 + i % 26);
     }
 
-    public static void fileReport(String fileName) throws IOException {
-        FileWriter writeMetaFile = new FileWriter(fileName+".meta");
-        writeMetaFile.write("Metadata Report: \n");
-        writeMetaFile.write("fullCount(true full)  :"+fullCount+"\n");
-        writeMetaFile.write("createRandomWordCount :"+createRandomWordCount+"\n");
-        writeMetaFile.write("createRandomIPCount   :"+createRandomIPCount+"\n");
-        writeMetaFile.write("returnIntegerCount    :"+returnIntegerCount+"\n");
-        writeMetaFile.write("returnRandDoubleCount :"+returnRandDoubleCount+"\n");
-        writeMetaFile.write("returnURLCount        :"+returnURLCount+"\n");
-        writeMetaFile.write("emptyFieldCount       :"+emptyFieldCount+"\n");
-        writeMetaFile.write("portNumberCount       :"+portNumberCount+"\n");
-        writeMetaFile.write("returnBoolCount       :"+returnBoolCount+"\n");
-        writeMetaFile.write("returnVectorCount     :"+returnVectorCount+"\n");
-        writeMetaFile.write(collectInfo);
-        writeMetaFile.close();
-    }
+
 
     public static String returnURL() {
         String[] urlList = {
