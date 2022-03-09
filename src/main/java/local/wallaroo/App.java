@@ -290,6 +290,10 @@ public class App
             writeFile.write(header + "\n");  // was getInfo
             Random rand  = new Random(2);
             for (int i = 1; i <= dataAmount; i++) {
+                String data = "\r" + anim.charAt(i % anim.length()) + " " + i;
+                System.out.write(data.getBytes());
+
+
                 // for (int fields = 0; fields <= fieldNumber; fields++) {
                 // 1
                 returnRandDoubleCount += 1;
