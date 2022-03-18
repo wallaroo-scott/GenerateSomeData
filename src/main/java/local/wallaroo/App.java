@@ -1,49 +1,55 @@
 package local.wallaroo;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.cli.*;
 // import org.json.simple.JSONArray;
-// import org.json.simple.JSONObject;
-// import com.google.gson.*;
+import org.json.simple.JSONObject;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.io.PrintWriter;
+import java.util.Random;
 
 /*
 This application creates randomized data in x rows(lines) by y columns(fields).  Default filename is "filename"
 but could be adjusted.
 
-Working on:  Zeek DNS format
+Output Formats:
+Updated:  Delimited Complete
+Updated:  JSON Complete
 
 Command Line Example:   mvn exec:java -Dexec.mainClass=local.wallaroo.App -Dexec.args="-fn test.text -d comma -l 100 -f 10"
 */
 
 public class App
 {
-    //
     public static final Option ARG_FILENAME = new Option("fn", "filename",true, "Add custom output filename. Default:  filename");
-    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data. Default: 10 (-lines = 10)");
-    public static final Option ARG_FIELDS = new Option("f", "fields",true, "Set number of fields per line. Default: 10 (-fields = 10");
-    public static final Option ARG_DATATYPE = new Option("dt", "datatype",false, "Set output type: default/zeekdns.");
+    public static final Option ARG_LINES = new Option("l", "lines",true, "Set number of lines of data. Default: 10 (-l = 10)");
+    public static final Option ARG_OUTPUT = new Option("o", "output",true, "Set the output to either delimiter or JSON.  (-o json <or> -o delimited)");
     public static final Option ARG_PATH = new Option("p", "path",true, "Set the path.  Default:  /tmp/ (-path /tmp/output/)");
-    public static final Option ARG_OUTPUT = new Option("o", "output",true, "Set the output to either delimiter or JSON.  (-output delimiter)");
-    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter if NOT JSON: Tab, Comma, Space. Default: tab (-delimiter comma)");
-    public static final Option ARG_NESTED = new Option("n", "nested",true, "Set the nested object property (number of items in each value property) Default: 10");
+    public static final Option ARG_DELIMITER = new Option("d", "delimiter",true, "Set delimiter: tab, comma, space. Default: tab (-d comma)");
 
+    /*  // Currently Unused
+    private static FileWriter file;
     static int switchRandom;
+    public static String emptyField = "(empty)";
+    public static boolean delimiterOutput;
+    public static int fieldNumber = 24; // fields per line
+    public static int returnDateCount;*/
+    public static String line = "-------------------------------";
     public static String collectInfo;
     public static String fileName;
-    public static int fieldNumber = 24; // fields per line
     public static int dataAmount;  // number of lines
     public static int fullCount;
     public static String delimiter;
     public static String path;
     public static String delimiterVerbose;
-    public static String emptyField = "(empty)";
-    public static boolean delimiterOutput;
-    public static int returnDateCount;
     public static int createRandomWordCount;
     public static int createRandomIPCount;
     public static int returnIntegerCount;
@@ -54,28 +60,20 @@ public class App
     public static int returnBoolCount;
     public static int returnVectorCount;
 
-    private static FileWriter file;
-        // public static Integer nestedValue;
-
-    // public static ProgressBar pb = new ProgressBar("Progress", 100);
-
-    public static void main( String[] args )  throws Exception {
-        // CommandLineParser clp = new DefaultParser();
-        // pb.start();
+    public static void main( String[] args )  {
+        String outputType;
         Options options = new Options();
         options.addOption(ARG_FILENAME);
         options.addOption(ARG_DELIMITER);
         options.addOption(ARG_LINES);
         options.addOption(ARG_PATH);
-        // options.addOption(ARG_OUTPUT);
-        // options.addOption(ARG_NESTED);
-        // options.addOption(ARG_FIELDS);
-        // options.addOption(ARG_DATATYPE);
+        options.addOption(ARG_OUTPUT);
 
         try {
             CommandLineParser parser = new DefaultParser();
             CommandLine cl = parser.parse(options, args);
 
+            // In order of distributed values
             if (cl.getOptionValue("filename") != null) {
                 fileName = cl.getOptionValue("filename");
             } else {
@@ -87,12 +85,6 @@ public class App
             } else {
                 delimiterVerbose = "tab";
             }
-
-            /*if (cl.getOptionValue("fields") != null) {
-                fieldNumber = Integer.parseInt(cl.getOptionValue("fields"));
-            } else {
-                fieldNumber = 10;
-            }*/
 
             if (cl.getOptionValue("lines") != null) {
                 dataAmount = Integer.parseInt(cl.getOptionValue("lines"));
@@ -127,16 +119,37 @@ public class App
                     printHelp(options);
                     break;
             }
-            // int nodes = 2;
+
+            System.out.println(line);
             System.out.println("Filename  : " + fileName);
             System.out.println("Path      : " + path);
             // System.out.println("Fields    : " + fieldNumber);
             System.out.println("Lines     : " + dataAmount);
+            System.out.println("Output    : "+cl.getOptionValue("output"));
+            System.out.println(line);
+            if (cl.getOptionValue("output") == null) {
+                System.out.println("You must select an output type.");
+                // printHelp(options);
+                System.exit(-1);
+            }
+            outputType = cl.getOptionValue("output").toString();
 
-            createDelimitedFile();
-            System.out.println("Done");
-            // pb.setExtraMessage("Finalizing....");
-            // pb.stop();
+            switch (outputType) {
+                case "json":
+                    generateJSON();
+                    break;
+
+                case "delimited":
+                    createDelimitedFile();
+                    break;
+
+                default:
+                    System.out.println("You must select an output type.");
+                    // printHelp(options);
+                    System.exit(-1);
+            }
+
+            // System.out.println("Done");
             System.exit(0);
         }
 
@@ -245,6 +258,201 @@ public class App
         String s = String.format("%.4f",random);
         return s;
     }
+    public static void generateJSON () throws IOException {
+        String anim= "|/-\\";
+        String header="\n";
+        try {// JSON Levels
+            JSONObject objPrimary = new JSONObject();
+            if(!path.endsWith("/")) { path = path + "/";}
+            fileName = path + fileName;
+            // System.out.println("Writing JSON data to:  " + fileName);
+            File directory = new File(path);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // String getInfo = writeInfoDelimiter();
+            FileWriter writeFile = new FileWriter(fileName);
+
+            writeFile.write(header + "\n");  // was getInfo
+            Random rand  = new Random(2);
+            System.out.println("Lines written:");
+
+            int x;
+
+            for (int top =1; top <= dataAmount; top ++) {   // Number of blocks
+                // JSONArray uidArray = new JSONArray();   //
+                Map mapID = new LinkedHashMap(4);
+                // Map mapQuery = new LinkedHashMap(5);
+                // Map mapClass = new LinkedHashMap(5);
+                String data = "\r" + anim.charAt(top % anim.length()) + " " + top;
+                System.out.write(data.getBytes());
+
+
+                // 1 time
+                returnRandDoubleCount += 1;
+                fullCount +=1;
+                objPrimary.put("ts",returnRandDouble(1612481111.1111, 1612489999.9999));
+
+                // 2 string
+                createRandomWordCount += 1;
+                fullCount +=1;
+                objPrimary.put("uid",createRandomWord(19));
+
+                // 3 addr (array)
+                createRandomIPCount += 1;
+                fullCount +=1;
+                mapID.put("orig_h",createRandomIP(250));
+
+                // 4 port
+                returnIntegerCount += 1;
+                fullCount +=1;
+                mapID.put("orig_h",returnInteger(65000));
+
+                // 5 addr
+                createRandomIPCount += 1;
+                fullCount +=1;
+                mapID.put("resp_h",createRandomIP(250));
+
+                // 6
+                returnIntegerCount += 1;
+                fullCount +=1;
+                mapID.put("resp_p",returnInteger(65000));
+
+                // id array
+                objPrimary.put("uid", mapID);
+
+
+                // 7
+                portNumberCount += 1;
+                fullCount +=1;
+                objPrimary.put("proto",enumReturn(rand.nextInt()));
+
+                // 8
+                returnIntegerCount += 1;
+                fullCount +=1;
+                objPrimary.put("trans_id",returnInteger(65000));
+
+                // 9
+                portNumberCount += 1;
+                fullCount +=1;
+                objPrimary.put("rtt",returnRandDouble(0.01, 0.5));
+
+                // 10
+                createRandomWordCount += 1;
+                fullCount +=1;
+                objPrimary.put("query",returnURL());
+
+                // 11
+                returnIntegerCount += 1;
+                fullCount +=1;
+                objPrimary.put("qclass",returnInteger(65000));
+
+                //12
+                createRandomWordCount += 1;
+                fullCount +=1;
+                objPrimary.put("qclass_name",createRandomWord(19));
+
+                // 13
+                returnIntegerCount += 1;
+                fullCount +=1;
+                objPrimary.put("qtype",returnInteger(65000));
+
+                // 14
+                createRandomWordCount += 1;
+                fullCount +=1;
+                objPrimary.put("qtype_name",createRandomWord(19));
+
+                // 15
+                returnIntegerCount += 1;
+                fullCount +=1;
+                objPrimary.put("rcode",returnInteger(65000));
+
+                // 16
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("rcode_name",seqString(1));
+
+                // 17
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("AA",seqString(1));
+
+                // 18
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("TC",seqString(1));
+
+                // 19
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("RD",seqString(1));
+
+                // 20
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("RA",seqString(1));
+
+                // 21
+                returnIntegerCount += 1;
+                fullCount +=1;
+                objPrimary.put("Z",returnInteger(65000));
+
+                // 22
+                returnVectorCount += 1;
+                fullCount +=1;
+                objPrimary.put("answers",returnStringVector(3));
+
+                // 23
+                returnVectorCount += 1;
+                fullCount +=1;
+                objPrimary.put("TTLs",returnIntegerVector(3));
+
+                // 24
+                returnBoolCount += 1;
+                fullCount +=1;
+                objPrimary.put("rejected",seqString(1));
+
+                // if (top==dataAmount) {System.out.print("\nComplete");}
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                JsonElement je = JsonParser.parseString(objPrimary.toString());
+                String prettyJsonString = gson.toJson(je);
+                // System.out.println(prettyJsonString);   // Debugging line.
+                writeFile.write(prettyJsonString);
+            }
+
+            metaDataReport();
+            writeFile.write("\n");
+            // System.out.println("\nClosing File...");
+            writeFile.close();
+
+        }
+        catch (IOException e)
+        {
+            showMessage("An error occurred writing the file.", false);
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+    }
+
+    public static void metaDataReport() {
+        System.out.println("\n");
+        System.out.println(line);
+        System.out.println("Metadata Report:");
+        System.out.println("fullCount(true full)  :"+fullCount);
+        System.out.println("createRandomWordCount :"+createRandomWordCount);
+        System.out.println("createRandomIPCount   :"+createRandomIPCount);
+        System.out.println("returnIntegerCount    :"+returnIntegerCount);
+        System.out.println("returnRandDoubleCount :"+returnRandDoubleCount);
+        System.out.println("returnURLCount        :"+returnURLCount);
+        System.out.println("emptyFieldCount       :"+emptyFieldCount);
+        System.out.println("portNumberCount       :"+portNumberCount);
+        System.out.println("returnBoolCount       :"+returnBoolCount);
+        System.out.println("returnVectorCount     :"+returnVectorCount);
+        System.out.println(line);
+    }
+
 
     public static String writeInfoDelimiter() {
         collectInfo =   "\n" +
@@ -256,8 +464,6 @@ public class App
 
         return collectInfo;
     }
-
-
 
     public static void createDelimitedFile () throws InterruptedException, IOException {
         String anim= "|/-\\";
@@ -285,14 +491,18 @@ public class App
 
             // String getInfo = writeInfoDelimiter();
             FileWriter writeFile = new FileWriter(fileName);
-            System.out.println("Creating File...");
 
+            System.out.println(line);
             writeFile.write(header + "\n");  // was getInfo
             Random rand  = new Random(2);
+            System.out.println("Lines written:");
             for (int i = 1; i <= dataAmount; i++) {
                 String data = "\r" + anim.charAt(i % anim.length()) + " " + i;
                 System.out.write(data.getBytes());
-
+                if (i==dataAmount) {
+                    System.out.print("\nComplete");
+                    System.out.println(line);
+                }
 
                 // for (int fields = 0; fields <= fieldNumber; fields++) {
                 // 1
@@ -443,24 +653,10 @@ public class App
             }
 
 
-            // pb.setExtraMessage("Creating Report....");
             writeFile.write("\n");
-            System.out.println("Closing File...");
+            // System.out.println("\nClosing File...");
             writeFile.close();
-            // fileReport(fileName);
-            System.out.println("\n");
-            System.out.println("Metadata Report: \n");
-            System.out.println("fullCount(true full)  :"+fullCount);
-            System.out.println("createRandomWordCount :"+createRandomWordCount);
-            System.out.println("createRandomIPCount   :"+createRandomIPCount);
-            System.out.println("returnIntegerCount    :"+returnIntegerCount);
-            System.out.println("returnRandDoubleCount :"+returnRandDoubleCount);
-            System.out.println("returnURLCount        :"+returnURLCount);
-            System.out.println("emptyFieldCount       :"+emptyFieldCount);
-            System.out.println("portNumberCount       :"+portNumberCount);
-            System.out.println("returnBoolCount       :"+returnBoolCount);
-            System.out.println("returnVectorCount     :"+returnVectorCount);
-            System.out.println("\n");
+            metaDataReport();
         }
 
         catch (IOException e)
@@ -469,14 +665,12 @@ public class App
             e.printStackTrace();
             System.exit(-1);
         }
-        showMessage("File Completed: " + fileName + "\n" + "Metadata File: " + fileName+".meta", true);
+        System.out.println(line);
     }
 
     public static String seqString(int i) {
         return i < 0 ? "" : seqString((i / 26) - 1) + (char)(65 + i % 26);
     }
-
-
 
     public static String returnURL() {
         String[] urlList = {
@@ -536,4 +730,8 @@ public class App
         int randomNumber=randURL.nextInt(urlList.length);
         return(urlList[randomNumber]);
     }
+
+
+
+
 }
